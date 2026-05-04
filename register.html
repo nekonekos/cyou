@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>注册 · LumiNya 在线同学录</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #1d1d1f;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 20px;
+      width: 100%;
+      flex: 1;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 0;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #f0f0f5;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1d1d1f;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .logo i { color: #007AFF; margin-right: 6px; font-size: 20px; }
+
+    .nav-link {
+      color: #007AFF;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 15px;
+    }
+
+    .page-title {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .page-title h1 {
+      font-size: clamp(24px, 6vw, 34px);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .page-title p {
+      font-size: 15px;
+      color: #6e6e73;
+    }
+
+    .form-card {
+      background: #ffffff;
+      border: 1px solid #e5e5ea;
+      border-radius: 20px;
+      padding: 28px 24px;
+      margin-bottom: 32px;
+    }
+
+    .form-group {
+      margin-bottom: 22px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #1d1d1f;
+    }
+
+    .form-group label .hint {
+      font-weight: 400;
+      font-size: 13px;
+      color: #8e8e93;
+      margin-left: 4px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 16px;
+      border: 1px solid #d2d2d7;
+      border-radius: 14px;
+      background: #ffffff;
+      color: #1d1d1f;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      font-family: inherit;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #007AFF;
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+    }
+
+    /* 文件上传 */
+    .file-upload-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .file-input-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #f2f7ff;
+      color: #007AFF;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 14px 20px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      border: 1px solid #d2d2d7;
+    }
+
+    .file-input-label:active { background: #e5f0ff; }
+
+    input[type="file"] { display: none; }
+
+    .file-preview {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: #f9f9fb;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+
+    .file-preview img {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid #e5e5ea;
+    }
+
+    .file-preview .file-name { flex: 1; word-break: break-all; }
+    .file-preview .remove-file { color: #ff3b30; cursor: pointer; font-size: 18px; padding: 4px; }
+
+    .error-text {
+      color: #ff3b30;
+      font-size: 13px;
+      margin-top: 6px;
+      display: none;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: #007AFF;
+      color: white;
+      border: none;
+      padding: 16px 24px;
+      font-size: 17px;
+      font-weight: 600;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+
+    .btn-submit:hover { background: #0066d6; }
+    .btn-submit:active { transform: scale(0.98); }
+    .btn-submit:disabled { background: #a0c4ff; cursor: not-allowed; }
+
+    .success-message {
+      display: none;
+      text-align: center;
+      padding: 32px 24px;
+      border: 1px solid #e5e5ea;
+      border-radius: 20px;
+      margin-bottom: 32px;
+    }
+
+    .success-message i { font-size: 48px; color: #34c759; margin-bottom: 16px; }
+    .success-message h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+    .success-message p { color: #6e6e73; font-size: 15px; }
+
+    footer {
+      text-align: center;
+      padding: 20px 0 24px;
+      border-top: 1px solid #f0f0f5;
+      margin-top: auto;
+      font-size: 13px;
+      color: #86868b;
+    }
+
+    footer a { color: #007AFF; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="/classmates.html" class="logo">
+        <i class="fas fa-star"></i> LumiNya
+      </a>
+      <a href="/classmates.html" class="nav-link">← 返回同学录</a>
+    </nav>
+
+    <div class="page-title">
+      <h1>📝 注册申请</h1>
+      <p>请使用真实信息，照片将用于身份审核</p>
+    </div>
+
+    <div id="formSection" class="form-card">
+      <form id="registerForm" novalidate>
+        <!-- 姓名 -->
+        <div class="form-group">
+          <label for="name">姓名 <span class="hint">（必填）</span></label>
+          <input type="text" id="name" name="name" placeholder="真实姓名" required autocomplete="name">
+          <div class="error-text" id="nameError">请输入姓名</div>
+        </div>
+
+        <!-- 当前班级 -->
+        <div class="form-group">
+          <label for="currentClass">当前班级 <span class="hint">（必填）</span></label>
+          <input type="text" id="currentClass" name="currentClass" placeholder="例如：高三(1)班" required>
+          <div class="error-text" id="currentClassError">请输入当前班级</div>
+        </div>
+
+        <!-- 分班前班级 -->
+        <div class="form-group">
+          <label for="previousClass">分班前班级 <span class="hint">（必填）</span></label>
+          <input type="text" id="previousClass" name="previousClass" placeholder="例如：高一(3)班" required>
+          <div class="error-text" id="previousClassError">请输入分班前班级</div>
+        </div>
+
+        <!-- 中考报名号 -->
+        <div class="form-group">
+          <label for="examId">中考报名号 <span class="hint">（必填，将作为登录账号）</span></label>
+          <input type="text" id="examId" name="examId" placeholder="准考证号或报名号" required>
+          <div class="error-text" id="examIdError">请输入中考报名号</div>
+        </div>
+
+        <!-- 出生日期 -->
+        <div class="form-group">
+          <label for="birthdate">出生日期 <span class="hint">（必填）</span></label>
+          <input type="date" id="birthdate" name="birthdate" required>
+          <div class="error-text" id="birthdateError">请选择出生日期</div>
+        </div>
+
+        <!-- 电子邮箱 -->
+        <div class="form-group">
+          <label for="email">电子邮箱 <span class="hint">（必填，接收审核结果）</span></label>
+          <input type="email" id="email" name="email" placeholder="your@example.com" required autocomplete="email">
+          <div class="error-text" id="emailError">请输入有效的邮箱地址</div>
+        </div>
+
+        <!-- 照片上传 -->
+        <div class="form-group">
+          <label>真人照片 <span class="hint">（必填，1MB以内，仅限图片）</span></label>
+          <div class="file-upload-wrapper">
+            <label for="photo" class="file-input-label">
+              <i class="fas fa-camera"></i> 选择照片
+            </label>
+            <input type="file" id="photo" name="photo" accept="image/*" required>
+            <div class="file-preview" id="filePreview" style="display: none;">
+              <img id="previewImg" src="" alt="预览">
+              <span class="file-name" id="fileName"></span>
+              <i class="fas fa-times-circle remove-file" id="removeFile"></i>
+            </div>
+            <div class="error-text" id="photoError">请上传1MB以内的图片文件</div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submitBtn">
+          <i class="fas fa-paper-plane"></i> 提交申请
+        </button>
+      </form>
+    </div>
+
+    <div id="successSection" class="success-message">
+      <i class="fas fa-check-circle"></i>
+      <h2>提交成功！</h2>
+      <p>你的信息已进入审核队列，请留意邮箱通知。</p>
+      <p style="margin-top: 12px; font-size: 14px;">审核通过后你将收到专属登录凭证。</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2026 <a href="/">LumiNya</a> · 在线同学录系统</p>
+  </footer>
+
+  <script>
+    (function() {
+      const form = document.getElementById('registerForm');
+      const formSection = document.getElementById('formSection');
+      const successSection = document.getElementById('successSection');
+      const submitBtn = document.getElementById('submitBtn');
+
+      const fileInput = document.getElementById('photo');
+      const filePreviewDiv = document.getElementById('filePreview');
+      const previewImg = document.getElementById('previewImg');
+      const fileNameSpan = document.getElementById('fileName');
+      const removeFileBtn = document.getElementById('removeFile');
+
+      const nameError = document.getElementById('nameError');
+      const currentClassError = document.getElementById('currentClassError');
+      const previousClassError = document.getElementById('previousClassError');
+      const examIdError = document.getElementById('examIdError');
+      const birthdateError = document.getElementById('birthdateError');
+      const emailError = document.getElementById('emailError');
+      const photoError = document.getElementById('photoError');
+
+      const MAX_SIZE = 1048576; // 1MB
+
+      function clearErrors() {
+        [nameError, currentClassError, previousClassError, examIdError, birthdateError, emailError, photoError].forEach(el => el.style.display = 'none');
+      }
+
+      function showError(el) { el.style.display = 'block'; }
+
+      fileInput.addEventListener('change', function(e) {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+          showError(photoError);
+          photoError.textContent = '请选择图片文件';
+          fileInput.value = '';
+          filePreviewDiv.style.display = 'none';
+          return;
+        }
+
+        if (file.size > MAX_SIZE) {
+          showError(photoError);
+          photoError.textContent = '照片不能超过1MB，当前大小：' + (file.size / 1024 / 1024).toFixed(2) + 'MB';
+          fileInput.value = '';
+          filePreviewDiv.style.display = 'none';
+          return;
+        }
+
+        photoError.style.display = 'none';
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          previewImg.src = ev.target.result;
+          fileNameSpan.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+          filePreviewDiv.style.display = 'flex';
+        };
+        reader.readAsDataURL(file);
+      });
+
+      removeFileBtn.addEventListener('click', function() {
+        fileInput.value = '';
+        filePreviewDiv.style.display = 'none';
+        previewImg.src = '';
+        photoError.style.display = 'none';
+      });
+
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        clearErrors();
+
+        const name = document.getElementById('name').value.trim();
+        const currentClass = document.getElementById('currentClass').value.trim();
+        const previousClass = document.getElementById('previousClass').value.trim();
+        const examId = document.getElementById('examId').value.trim();
+        const birthdate = document.getElementById('birthdate').value;
+        const email = document.getElementById('email').value.trim();
+        const photoFile = fileInput.files[0];
+
+        let isValid = true;
+
+        if (!name) { showError(nameError); isValid = false; }
+        if (!currentClass) { showError(currentClassError); isValid = false; }
+        if (!previousClass) { showError(previousClassError); isValid = false; }
+        if (!examId) { showError(examIdError); isValid = false; }
+        if (!birthdate) { showError(birthdateError); isValid = false; }
+        if (!email) {
+          showError(emailError);
+          emailError.textContent = '请输入邮箱地址';
+          isValid = false;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          showError(emailError);
+          emailError.textContent = '请输入有效的邮箱地址';
+          isValid = false;
+        }
+        if (!photoFile) {
+          showError(photoError);
+          photoError.textContent = '请上传一张真人照片';
+          isValid = false;
+        } else if (photoFile.size > MAX_SIZE) {
+          showError(photoError);
+          photoError.textContent = '照片不能超过1MB';
+          isValid = false;
+        }
+
+        if (!isValid) return;
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> 提交中...';
+
+        // TODO: 接入真实API
+        const apiEndpoint = '/api/register';
+        try {
+          const formData = new FormData();
+          formData.append('name', name);
+          formData.append('currentClass', currentClass);
+          formData.append('previousClass', previousClass);
+          formData.append('examId', examId);
+          formData.append('birthdate', birthdate);
+          formData.append('email', email);
+          formData.append('photo', photoFile);
+
+          // await fetch(apiEndpoint, { method: 'POST', body: formData });
+          await new Promise(resolve => setTimeout(resolve, 1500)); // 模拟发送
+
+          formSection.style.display = 'none';
+          successSection.style.display = 'block';
+        } catch (error) {
+          alert('提交失败，请稍后重试。');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> 提交申请';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
