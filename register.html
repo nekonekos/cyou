@@ -216,15 +216,15 @@
 <body>
   <div class="container">
     <nav>
-      <a href="/classmates.html" class="logo">
+      <a href="luminya.cc" class="logo">
         <i class="fas fa-star"></i> LumiNya
       </a>
-      <a href="/classmates.html" class="nav-link">← 返回同学录</a>
+      <a href="#" class="nav-link">← 返回主页</a>
     </nav>
 
     <div class="page-title">
-      <h1>📝 注册申请</h1>
-      <p>请使用真实信息，照片将用于身份审核</p>
+      <h1>📝 同学认证</h1>
+      <p>请使用真实信息，照片仅用于身份审核</p>
     </div>
 
     <div id="formSection" class="form-card">
@@ -239,21 +239,21 @@
         <!-- 当前班级 -->
         <div class="form-group">
           <label for="currentClass">当前班级 <span class="hint">（必填）</span></label>
-          <input type="text" id="currentClass" name="currentClass" placeholder="例如：高三(1)班" required>
+          <input type="text" id="currentClass" name="currentClass" placeholder="例如：九(1)班" required>
           <div class="error-text" id="currentClassError">请输入当前班级</div>
         </div>
 
         <!-- 分班前班级 -->
         <div class="form-group">
           <label for="previousClass">分班前班级 <span class="hint">（必填）</span></label>
-          <input type="text" id="previousClass" name="previousClass" placeholder="例如：高一(3)班" required>
+          <input type="text" id="previousClass" name="previousClass" placeholder="例如：八(2)班" required>
           <div class="error-text" id="previousClassError">请输入分班前班级</div>
         </div>
 
         <!-- 中考报名号 -->
         <div class="form-group">
-          <label for="examId">中考报名号 <span class="hint">（必填，将作为登录账号）</span></label>
-          <input type="text" id="examId" name="examId" placeholder="准考证号或报名号" required>
+          <label for="examId">中考报名号 <span class="hint">（必填，将作为登录账号，不会公开）</span></label>
+          <input type="text" id="examId" name="examId" placeholder="例如260632XXXX" required>
           <div class="error-text" id="examIdError">请输入中考报名号</div>
         </div>
 
@@ -266,14 +266,14 @@
 
         <!-- 电子邮箱 -->
         <div class="form-group">
-          <label for="email">电子邮箱 <span class="hint">（必填，接收审核结果）</span></label>
+          <label for="email">电子邮箱 <span class="hint">（必填，接收认证审核结果）</span></label>
           <input type="email" id="email" name="email" placeholder="your@example.com" required autocomplete="email">
           <div class="error-text" id="emailError">请输入有效的邮箱地址</div>
         </div>
 
         <!-- 照片上传 -->
         <div class="form-group">
-          <label>真人照片 <span class="hint">（必填，1MB以内，仅限图片）</span></label>
+          <label>真人照片 <span class="hint">（必填，1MB以内，仅作身份审核使用，不会公开）</span></label>
           <div class="file-upload-wrapper">
             <label for="photo" class="file-input-label">
               <i class="fas fa-camera"></i> 选择照片
@@ -289,7 +289,7 @@
         </div>
 
         <button type="submit" class="btn-submit" id="submitBtn">
-          <i class="fas fa-paper-plane"></i> 提交申请
+          <i class="fas fa-paper-plane"></i> 提交认证
         </button>
       </form>
     </div>
