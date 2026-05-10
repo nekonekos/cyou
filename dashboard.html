@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>我的同学录 · LumiNya</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background:#fff; color:#1d1d1f; min-height:100vh; display:flex; flex-direction:column; }
+    .container { max-width:680px; margin:0 auto; padding:20px; width:100%; flex:1; }
+    .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid #f0f0f5; }
+    .logout { color:#ff3b30; cursor:pointer; font-size:14px; }
+    .card { background:#fff; border:1px solid #e5e5ea; border-radius:20px; padding:24px; margin-bottom:20px; }
+    .btn { display:inline-block; padding:12px 24px; background:#007AFF; color:white; border-radius:14px; text-decoration:none; font-weight:600; border:none; cursor:pointer; font-size:16px; }
+    .btn:disabled { background:#a0c4ff; }
+    .invite-link { word-break:break-all; margin:10px 0; background:#f2f7ff; padding:10px; border-radius:10px; }
+    .submission-item { padding:12px 0; border-bottom:1px solid #f0f0f5; }
+    .hidden { display:none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>👋 <span id="userName"></span> 的仪表盘</h1>
+      <span class="logout" onclick="logout()">退出登录</span>
+    </div>
+
+    <!-- 邀请链接区域 -->
+    <div class="card" id="inviteCard">
+      <h2>🔗 我的邀请链接</h2>
+      <div id="noInvite">
+        <p>你还没有创建邀请链接</p>
+        <button class="btn" id="createInviteBtn" onclick="createInvite()">创建邀请链接</button>
+      </div>
+      <div id="hasInvite" class="hidden">
+        <p>你的专属邀请链接：</p>
+        <div class="invite-link" id="inviteUrl"></div>
+        <button class="btn" onclick="copyLink()"><i class="fas fa-copy"></i> 复制链接</button>
+        <p style="margin-top:10px;">已有 <strong id="subCount">0</strong> 人填写</p>
+      </div>
+    </div>
+
+    <!-- 提交数据区域 -->
+    <div class="card hidden" id="submissionsCard">
+      <h2>📋 收到的同学录 (<span id="subTitleCount">0</span>)</h2>
+      <div id="submissionList"></div>
+      <button class="btn" onclick="downloadCSV()" style="margin-top:16px;"><i class="fas fa-download"></i> 下载 CSV</button>
+    </div>
+  </div>
+
+  <script>
+    const API = 'https://api.luminya.cyou';
+    const examId = localStorage.getItem('luminya_examId');
+    const token = localStorage.getItem('luminya_token');
+    if (!examId || !token) {
+      window.location.href = '/login';
+    }
+
+    // 通用请求函数
+    async function apiGet(path) {
+      const res = await fetch(API + path, {
+        headers: { 'Authorization': `Bearer ${examId}:${token}` }
+      });
+      if (res.status === 401) { logout(); return null; }
+      return res.json();
+    }
+
+    async function apiPost(path, body) {
+      const res = await fetch(API + path, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${examId}:${token}`
+        },
+        body: body ? JSON.stringify(body) : undefined
+      });
+      if (res.status === 401) { logout(); return null; }
+      return res.json();
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = '/login';
+    }
+
+    // 加载用户信息和邀请状态
+    async function loadDashboard() {
+      // 获取用户信息
+      const user = await apiGet('/api/user/me');
+      if (user) {
+        document.getElementById('userName').textContent = user.name;
+      }
+
+      // 获取邀请状态
+      const status = await apiGet('/api/invite/status');
+      if (status && status.exists) {
+        document.getElementById('noInvite').classList.add('hidden');
+        document.getElementById('hasInvite').classList.remove('hidden');
+        document.getElementById('inviteUrl').textContent = status.url;
+        document.getElementById('subCount').textContent = status.submission_count;
+        if (status.submission_count > 0) {
+          document.getElementById('submissionsCard').classList.remove('hidden');
+          document.getElementById('subTitleCount').textContent = status.submission_count;
+          loadSubmissions();
+        }
+      }
+    }
+
+    async function createInvite() {
+      const result = await apiPost('/api/invite');
+      if (result && result.link_code) {
+        // 重新加载
+        loadDashboard();
+      } else if (result && result.error) {
+        alert(result.error);
+      }
+    }
+
+    function copyLink() {
+      const url = document.getElementById('inviteUrl').textContent;
+      navigator.clipboard.writeText(url).then(() => alert('链接已复制'));
+    }
+
+    async function loadSubmissions() {
+      const subs = await apiGet('/api/submissions');
+      if (!subs || subs.error) return;
+      const list = document.getElementById('submissionList');
+      list.innerHTML = subs.map(s => {
+        const data = JSON.parse(s.data);
+        return `<div class="submission-item">
+          <strong>${data.name || ''}</strong> (${s.submitter_exam_id})<br>
+          班级: ${data.currentClass || ''}<br>
+          留言: ${data.message || '无'}
+          <br><small>${new Date(s.created_at).toLocaleString()}</small>
+        </div>`;
+      }).join('');
+    }
+
+    function downloadCSV() {
+      window.open(API + '/api/submissions/download', '_blank');
+    }
+
+    // 初始加载
+    loadDashboard();
+  </script>
+</body>
+</html>
