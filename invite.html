@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>填写同学录 · LumiNya</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background:#fff; color:#1d1d1f; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+    .container { max-width:600px; width:100%; padding:20px; }
+    .card { background:#fff; border:1px solid #e5e5ea; border-radius:20px; padding:24px; margin-bottom:20px; }
+    .header { text-align:center; margin-bottom:20px; }
+    .header p { color:#6e6e73; }
+    .form-group { margin-bottom:16px; }
+    .form-group label { display:block; font-weight:600; margin-bottom:6px; }
+    .form-group input, .form-group textarea { width:100%; padding:12px; border-radius:12px; border:1px solid #d2d2d7; font-size:16px; }
+    .btn { display:inline-block; padding:12px 24px; background:#007AFF; color:white; border-radius:14px; font-weight:600; border:none; cursor:pointer; font-size:16px; width:100%; }
+    .btn:disabled { background:#a0c4ff; }
+    .modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:10; }
+    .modal-content { background:white; border-radius:20px; padding:24px; max-width:380px; width:90%; }
+    .hidden { display:none !important; }
+    .error { color:#ff3b30; margin:8px 0; font-size:14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header card" id="creatorInfo">
+      <h2>📩 <span id="creatorName"></span> 邀请你填写同学录</h2>
+      <p id="creatorClass"></p>
+    </div>
+
+    <!-- 未登录时的登录模态框 -->
+    <div id="loginModal" class="modal hidden">
+      <div class="modal-content">
+        <h3>🔐 请先登录</h3>
+        <input type="text" id="loginExamId" placeholder="中考报名号（学号）" style="width:100%; margin:8px 0;">
+        <input type="password" id="loginToken" placeholder="登录 Token" style="width:100%; margin:8px 0;">
+        <p id="loginError" class="error" style="display:none;">登录失败</p>
+        <button class="btn" onclick="doLogin()" style="margin-top:12px;">登录</button>
+        <p style="margin-top:12px; font-size:14px;">还没有账号？<a href="/register" target="_blank">去注册</a>，审核通过后获得 Token。</p>
+      </div>
+    </div>
+
+    <!-- 填写表单 (默认隐藏，登录后显示) -->
+    <div id="formCard" class="card hidden">
+      <h3>✏️ 你的信息</h3>
+      <form id="submitForm">
+        <div class="form-group">
+          <label>姓名 *</label>
+          <input type="text" id="name" required>
+        </div>
+        <div class="form-group">
+          <label>当前班级 *</label>
+          <input type="text" id="currentClass" required>
+        </div>
+        <div class="form-group">
+          <label>出生日期 *</label>
+          <input type="date" id="birthdate" required>
+        </div>
+        <div class="form-group">
+          <label>电话</label>
+          <input type="tel" id="phone" placeholder="选填，可带区号">
+        </div>
+        <div class="form-group">
+          <label>邮箱</label>
+          <input type="email" id="email" placeholder="选填">
+        </div>
+        <div class="form-group">
+          <label>地址</label>
+          <input type="text" id="address" placeholder="选填">
+        </div>
+        <div class="form-group">
+          <label>常住城市</label>
+          <input type="text" id="city" placeholder="选填">
+        </div>
+        <div class="form-group">
+          <label>兴趣爱好</label>
+          <textarea id="hobbies" rows="2" placeholder="选填"></textarea>
+        </div>
+        <div class="form-group">
+          <label>想对TA说的话</label>
+          <textarea id="message" rows="3" placeholder="选填"></textarea>
+        </div>
+        <button type="submit" class="btn" id="submitBtn">提交</button>
+        <p id="submitError" class="error" style="display:none;"></p>
+      </form>
+    </div>
+
+    <!-- 提交成功 -->
+    <div id="successMsg" class="card hidden">
+      <h2>🎉 提交成功！</h2>
+      <p>你的同学录已经发送给TA。</p>
+    </div>
+  </div>
+
+  <script>
+    const API = 'https://api.luminya.cyou';
+    const urlParams = new URLSearchParams(window.location.search);
+    const linkCode = urlParams.get('code');
+
+    if (!linkCode) {
+      document.body.innerHTML = '<div class="container"><p>无效的邀请链接</p></div>';
+      throw new Error('缺少code');
+    }
+
+    // 加载发布者信息
+    async function loadCreator() {
+      try {
+        const res = await fetch(`${API}/api/invite/info?link_code=${linkCode}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        document.getElementById('creatorName').textContent = data.creator_name;
+        document.getElementById('creatorClass').textContent = data.creator_class;
+      } catch(e) {
+        document.getElementById('creatorInfo').innerHTML = '<p style="color:red;">邀请链接无效</p>';
+      }
+    }
+
+    // 检查登录状态
+    function isLoggedIn() {
+      return !!(localStorage.getItem('luminya_examId') && localStorage.getItem('luminya_token'));
+    }
+
+    // 自动填充表单（从 localStorage 获取用户信息）
+    async function prefillForm() {
+      const user = JSON.parse(localStorage.getItem('luminya_user') || '{}');
+      if (user.name) document.getElementById('name').value = user.name;
+      if (user.currentClass) document.getElementById('currentClass').value = user.currentClass;
+      // 出生日期可从注册数据获取，但这里没有存储，可留空
+      // 通过 /api/user/me 获取更多信息（但会暴露 token，简单起见暂时不额外请求）
+      const meResp = await fetch(API + '/api/user/me', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('luminya_examId')}:${localStorage.getItem('luminya_token')}` }
+      });
+      if (meResp.ok) {
+        const meData = await meResp.json();
+        document.getElementById('name').value = meData.name || '';
+        document.getElementById('currentClass').value = meData.current_class || '';
+      }
+    }
+
+    function showForm() {
+      document.getElementById('loginModal').classList.add('hidden');
+      document.getElementById('formCard').classList.remove('hidden');
+      prefillForm();
+    }
+
+    function showLogin() {
+      document.getElementById('loginModal').classList.remove('hidden');
+      document.getElementById('formCard').classList.add('hidden');
+    }
+
+    // 登录
+    window.doLogin = async function() {
+      const examId = document.getElementById('loginExamId').value.trim();
+      const token = document.getElementById('loginToken').value.trim();
+      const errorEl = document.getElementById('loginError');
+      if (!examId || !token) return;
+
+      const res = await fetch(API + '/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ examId, token })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = data.error || '登录失败';
+        return;
+      }
+
+      localStorage.setItem('luminya_examId', examId);
+      localStorage.setItem('luminya_token', token);
+      localStorage.setItem('luminya_user', JSON.stringify(data.user));
+      showForm();
+    };
+
+    // 提交表单
+    document.getElementById('submitForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submitBtn');
+      const errorEl = document.getElementById('submitError');
+      errorEl.style.display = 'none';
+
+      const name = document.getElementById('name').value.trim();
+      const currentClass = document.getElementById('currentClass').value.trim();
+      const birthdate = document.getElementById('birthdate').value;
+      if (!name || !currentClass || !birthdate) {
+        errorEl.textContent = '姓名、班级、出生日期为必填';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      const payload = {
+        name,
+        currentClass,
+        birthdate,
+        phone: document.getElementById('phone').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        hobbies: document.getElementById('hobbies').value.trim(),
+        message: document.getElementById('message').value.trim(),
+      };
+
+      submitBtn.disabled = true;
+      try {
+        const res = await fetch(`${API}/api/submit/${linkCode}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('luminya_examId')}:${localStorage.getItem('luminya_token')}`
+          },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || '提交失败');
+
+        document.getElementById('formCard').classList.add('hidden');
+        document.getElementById('successMsg').classList.remove('hidden');
+      } catch(err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    // 初始化
+    loadCreator();
+    if (isLoggedIn()) {
+      showForm();
+    } else {
+      showLogin();
+    }
+  </script>
+</body>
+</html>
