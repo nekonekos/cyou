@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 · LumiNya</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background:#fff; display:flex; align-items:center; justify-content:center; min-height:100vh; }
+    .box { width:100%; max-width:400px; padding:40px 30px; border:1px solid #e5e5ea; border-radius:20px; text-align:center; }
+    h1 { margin-bottom:20px; }
+    input { width:100%; padding:12px; margin:8px 0; border-radius:14px; border:1px solid #d2d2d7; font-size:16px; }
+    button { width:100%; padding:14px; background:#007AFF; color:white; border:none; border-radius:14px; font-size:16px; font-weight:600; cursor:pointer; }
+    .error { color:#ff3b30; margin:10px 0; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>🔑 登录同学录</h1>
+    <input type="text" id="examId" placeholder="中考报名号（学号）">
+    <input type="password" id="token" placeholder="登录 Token">
+    <button onclick="login()">登录</button>
+    <p id="error" class="error" style="display:none;"></p>
+  </div>
+
+  <script>
+    const API = 'https://api.luminya.cyou';
+
+    async function login() {
+      const examId = document.getElementById('examId').value.trim();
+      const token = document.getElementById('token').value.trim();
+      const errorEl = document.getElementById('error');
+      if (!examId || !token) return;
+
+      const res = await fetch(API + '/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ examId, token })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = data.error || '登录失败';
+        return;
+      }
+
+      // 保存登录信息到 localStorage
+      localStorage.setItem('luminya_examId', examId);
+      localStorage.setItem('luminya_token', token);
+      localStorage.setItem('luminya_user', JSON.stringify(data.user));
+
+      window.location.href = '/user/dashboard.html';
+    }
+  </script>
+</body>
+</html>
