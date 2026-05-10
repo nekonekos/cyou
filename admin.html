@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理员后台 · LumiNya</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background:#fff; color:#1d1d1f; padding:20px; }
+    .container { max-width:800px; margin:0 auto; }
+    .login-box, .panel { background:#fff; border:1px solid #e5e5ea; border-radius:20px; padding:30px; margin:20px 0; }
+    input, button { font-size:16px; padding:12px; border-radius:14px; border:1px solid #d2d2d7; width:100%; margin:8px 0; }
+    button { background:#007AFF; color:white; border:none; font-weight:600; cursor:pointer; }
+    button.danger { background:#ff3b30; }
+    .user-card { display:flex; align-items:center; gap:16px; padding:12px 0; border-bottom:1px solid #f0f0f5; }
+    .user-card img { width:48px; height:48px; border-radius:10px; object-fit:cover; }
+    .user-info { flex:1; }
+    .actions { display:flex; gap:8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 管理员审核</h1>
+    <div id="loginSection" class="login-box">
+      <input type="password" id="adminToken" placeholder="管理员令牌">
+      <button onclick="login()">登录</button>
+      <p id="loginError" style="color:red; display:none;">令牌无效</p>
+    </div>
+    <div id="panelSection" class="panel" style="display:none;">
+      <h2>待审核用户</h2>
+      <div id="userList"></div>
+    </div>
+  </div>
+
+  <script>
+    const API = 'https://api.luminya.cyou';
+    let adminToken = '';
+
+    async function login() {
+      const token = document.getElementById('adminToken').value;
+      const res = await fetch(API + '/api/admin/login', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token })
+      });
+      if (res.ok) {
+        adminToken = token;
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('panelSection').style.display = 'block';
+        loadPending();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+      }
+    }
+
+    async function loadPending() {
+      const res = await fetch(API + '/api/admin/pending', {
+        headers:{'Authorization':`Bearer ${adminToken}`}
+      });
+      const users = await res.json();
+      const list = document.getElementById('userList');
+      list.innerHTML = users.map(u => `
+        <div class="user-card">
+          <img src="${u.photo_url}" alt="照片">
+          <div class="user-info">
+            <strong>${u.name}</strong> (${u.exam_id})<br>
+            ${u.current_class} | 生日: ${u.birthdate}<br>
+            <small>${u.email}</small>
+          </div>
+          <div class="actions">
+            <button onclick="approve(${u.id})">通过</button>
+            <button class="danger" onclick="reject(${u.id})">拒绝</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function approve(userId) {
+      await fetch(API + '/api/admin/approve', {
+        method:'POST', headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${adminToken}`}, body: JSON.stringify({ userId })
+      });
+      loadPending();
+    }
+
+    async function reject(userId) {
+      await fetch(API + '/api/admin/reject', {
+        method:'POST', headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${adminToken}`}, body: JSON.stringify({ userId })
+      });
+      loadPending();
+    }
+  </script>
+</body>
+</html>
